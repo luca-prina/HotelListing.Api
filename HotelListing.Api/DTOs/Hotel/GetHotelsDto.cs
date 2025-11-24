@@ -1,16 +1,19 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿namespace HotelListing.Api.DTOs.Hotel;
 
-namespace HotelListing.Api.Data;
-
-public class Hotel
+public class GetHotelsDto
 {
 
     public int Id { get; set; }
+
     public required string Name { get; set; }
+
     public required string Address { get; set; }
+
     public double Rating { get; set; }
 
+
+    // Foreign Key
     public int CountryId { get; set; }
-    public Country? Country { get; set; }
+
 
 }

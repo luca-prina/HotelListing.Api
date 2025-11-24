@@ -1,89 +1,69 @@
-﻿using HotelListing.Api.Data;
-using Microsoft.AspNetCore.Mvc;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using HotelListing.Api.Data;
+using HotelListing.Api.DTOs.Hotel;
+using HotelListing.Api.Contracts;
 
 namespace HotelListing.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class HotelsController : ControllerBase
+public class HotelsController : BaseApiController
 {
+    
+    private readonly IHotelsService hotelsService;
 
-    private static List<Hotel> hotels = new List<Hotel>
+    public HotelsController(IHotelsService hotelsService)
     {
-        new Hotel { Id = 1, Name = "Hotel One", Address = "123 Main St", Rating = 4.5 },
-        new Hotel { Id = 2, Name = "Hotel Two", Address = "456 Elm St", Rating = 4.0 },
-        new Hotel { Id = 3, Name = "Hotel Three", Address = "789 Oak St", Rating = 3.5 }
-    };
+        this.hotelsService = hotelsService;
+    }
 
-
-
-    // GET: api/<HotelsController>
+    // GET: api/Hotels
     [HttpGet]
-    public ActionResult<IEnumerable<Hotel>> Get()
+    public async Task<ActionResult<IEnumerable<GetHotelDto>>> GetHotels()
     {
-        return Ok(hotels);
+        var result = await hotelsService.GetHotelsAsync();
+        return ToActionResult(result);
     }
 
-    // GET api/<HotelsController>/5
+    // GET: api/Hotels/5
     [HttpGet("{id}")]
-    public ActionResult<Hotel> Get(int id)
+    public async Task<ActionResult<GetHotelDto>> GetHotel(int id)
     {
-        var hotel = hotels.FirstOrDefault(h => h.Id == id);
-
-        if (hotel == null)
-        {
-            return NotFound();
-        }
-
-        return Ok(hotel);
+        var result = await hotelsService.GetHotelAsync(id);
+        return ToActionResult(result);
     }
 
-    // POST api/<HotelsController>
-    [HttpPost]
-    public ActionResult<Hotel> Post([FromBody] Hotel newHotel)
-    {
-        if (hotels.Any(h => h.Id == newHotel.Id))
-        {
-            return BadRequest("A hotel with the same ID already exists.");
-        }
-
-        hotels.Add(newHotel);
-        return CreatedAtAction(nameof(Get), new { id = newHotel.Id }, newHotel);
-    }
-
-    // PUT api/<HotelsController>/5
+    // PUT: api/Hotels/5
     [HttpPut("{id}")]
-    public ActionResult Put(int id, [FromBody] Hotel updatedHotel)
+    public async Task<IActionResult> PutHotel(int id, UpdateHotelDto hotelDto)
     {
-        var existingHotel = hotels.FirstOrDefault(h => h.Id == id);
-
-        if (existingHotel == null)
+        if (id != hotelDto.Id)
         {
-            return NotFound();
+            return BadRequest("Id route value must match payload Id.");
         }
 
-        existingHotel.Name = updatedHotel.Name;
-        existingHotel.Address = updatedHotel.Address;
-        existingHotel.Rating = updatedHotel.Rating; 
-
-        return NoContent();
+        var result = await hotelsService.UpdateHotelAsync(id, hotelDto);
+        return ToActionResult(result);
     }
 
-    // DELETE api/<HotelsController>/5
+    // POST: api/Hotels
+    [HttpPost]
+    public async Task<ActionResult<GetHotelDto>> PostHotel(CreateHotelDto hotelDto)
+    {
+        var result = await hotelsService.CreateHotelAsync(hotelDto);
+        if (!result.IsSuccess) return MapErrorsToResponse(result.Errors);
+
+        return CreatedAtAction(nameof(GetHotel), new { id = result.Value!.Id }, result.Value);
+    }
+
+    // DELETE: api/Hotels/5
     [HttpDelete("{id}")]
-    public ActionResult Delete(int id)
+    public async Task<IActionResult> DeleteHotel(int id)
     {
-
-        var hotel = hotels.FirstOrDefault(h => h.Id == id);
-        if (hotel == null)
-        {
-            return NotFound(new {message = "Hotel not found"});
-        }
-        hotels.Remove(hotel);
-        return NoContent();
-
-
+        var result = await hotelsService.DeleteHotelAsync(id);
+        return ToActionResult(result);
     }
+
+
 }
